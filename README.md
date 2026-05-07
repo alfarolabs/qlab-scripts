@@ -14,7 +14,7 @@ Sorts the cues inside the **selected Group cue** alphabetically by cue name (Aâ€
 
 **Behavior:**
 - Requires exactly **one** selected cue, and it must be a Group.
-- Sorts only the immediate children of that group. Nested groups stay where they are; their internal contents are untouched.
+- Sorts only the immediate children of that group. Nested group cues are sorted like other immediate children, but their internal contents are untouched.
 - Sort is **case-insensitive**. Names starting with a letter come before names starting with a digit or symbol.
 - Cue numbers are ignored â€” only the cue **name** matters.
 

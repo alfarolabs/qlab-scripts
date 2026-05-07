@@ -6,7 +6,8 @@
 --   1. In QLab, select a single Group cue.
 --   2. Run this script (from a Script cue, Script Editor, or hotkey).
 --   3. The group's immediate children are reordered alphabetically by q name.
---      Nested groups are left in place; their internal contents are untouched.
+--      Nested group cues are sorted like other immediate children; their
+--      internal contents are untouched.
 --
 -- NOTE: This file is intentionally pure ASCII (no smart quotes, em dashes,
 -- line-continuation backslashes, or Unicode comparison operators) so it can
@@ -62,7 +63,7 @@ tell application id "com.figure53.QLab.5"
 			set buf to buf & cls & tb & nm & tb & (uniqueID of c) & lf
 		end repeat
 		
-		set sortedText to do shell script "printf %s " & quoted form of buf & " | LC_ALL=en_US.UTF-8 sort -f -t \"$(printf '\\t')\" -k1,1 -k2,2"
+		set sortedText to do shell script "printf %s " & quoted form of buf & " | LC_ALL=en_US.UTF-8 sort -s -f -t \"$(printf '\\t')\" -k1,1 -k2,2"
 		
 		-- `do shell script` converts shell newlines (\n) to CR (\r) in the
 		-- returned text, so we split on CR here, not LF.
