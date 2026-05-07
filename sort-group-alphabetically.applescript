@@ -1,5 +1,5 @@
--- QLab 5 — Sort the cues inside the SELECTED group alphabetically
--- (A–Z first, then digits/symbols).
+-- QLab 5 -- Sort the cues inside the SELECTED group alphabetically
+-- (A-Z first, then digits/symbols).
 -- Requires exactly ONE selected cue, and it MUST be a Group.
 --
 -- Usage:
@@ -7,27 +7,28 @@
 --   2. Run this script (from a Script cue, Script Editor, or hotkey).
 --   3. The group's immediate children are reordered alphabetically by q name.
 --      Nested groups are left in place; their internal contents are untouched.
+--
+-- NOTE: This file is intentionally pure ASCII (no smart quotes, em dashes,
+-- line-continuation backslashes, or Unicode comparison operators) so it can
+-- be pasted into QLab's Script cue editor without encoding corruption.
 
 tell application id "com.figure53.QLab.5"
 	tell front workspace
 		set sel to (selected as list)
 		
 		if (count of sel) is 0 then
-			display dialog "Select a Group cue first." ¬
-				buttons {"OK"} default button 1
+			display dialog "Select a Group cue first." buttons {"OK"} default button 1
 			return
 		end if
 		
 		if (count of sel) > 1 then
-			display dialog "Select only ONE Group cue." ¬
-				buttons {"OK"} default button 1
+			display dialog "Select only ONE Group cue." buttons {"OK"} default button 1
 			return
 		end if
 		
 		set targetGroup to item 1 of sel
 		if q type of targetGroup is not "Group" then
-			display dialog "The selected cue is not a Group. Select a Group cue and try again." ¬
-				buttons {"OK"} default button 1
+			display dialog "The selected cue is not a Group. Select a Group cue and try again." buttons {"OK"} default button 1
 			return
 		end if
 		set kids to every cue of targetGroup
@@ -56,15 +57,12 @@ tell application id "com.figure53.QLab.5"
 			set cls to "1"
 			if (count of nm) > 0 then
 				set fc to character 1 of nm
-				if (fc ≥ "A" and fc ≤ "Z") or (fc ≥ "a" and fc ≤ "z") then ¬
-					set cls to "0"
+				if (fc >= "A" and fc <= "Z") or (fc >= "a" and fc <= "z") then set cls to "0"
 			end if
 			set buf to buf & cls & tb & nm & tb & (uniqueID of c) & lf
 		end repeat
 		
-		set sortedText to do shell script ¬
-			"printf %s " & quoted form of buf & ¬
-			" | LC_ALL=en_US.UTF-8 sort -f -t \"$(printf '\\t')\" -k1,1 -k2,2"
+		set sortedText to do shell script "printf %s " & quoted form of buf & " | LC_ALL=en_US.UTF-8 sort -f -t \"$(printf '\\t')\" -k1,1 -k2,2"
 		
 		-- `do shell script` converts shell newlines (\n) to CR (\r) in the
 		-- returned text, so we split on CR here, not LF.
@@ -84,16 +82,13 @@ tell application id "com.figure53.QLab.5"
 			end if
 		end repeat
 		
+		-- Move each cue, in sorted order, to the end of the group.
+		-- After the loop completes, every child has been re-appended in
+		-- order, so the final order matches sortedIDs.
 		tell targetGroup
-			set prevID to missing value
 			repeat with cid in sortedIDs
 				set cidText to cid as text
-				if prevID is missing value then
-					move cue id cidText to beginning
-				else
-					move cue id cidText to after cue id prevID
-				end if
-				set prevID to cidText
+				move cue id cidText to end of targetGroup
 			end repeat
 		end tell
 	end tell
