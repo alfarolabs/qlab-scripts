@@ -30,7 +30,6 @@ tell application id "com.figure53.QLab.5"
 				buttons {"OK"} default button 1
 			return
 		end if
-		
 		set kids to every cue of targetGroup
 		if (count of kids) < 2 then return
 		
@@ -38,11 +37,22 @@ tell application id "com.figure53.QLab.5"
 		-- class 0 = name starts with a letter (so letters sort first),
 		-- class 1 = name starts with a digit / symbol / is empty.
 		set lf to ASCII character 10
+		set cr to ASCII character 13
 		set tb to ASCII character 9
 		set buf to ""
 		repeat with c in kids
 			set nm to q name of c
 			if nm is missing value then set nm to ""
+			-- Strip embedded tabs/newlines from cue names so they don't break
+			-- the tab/newline-delimited record format the shell sort expects.
+			set savedTIDs to AppleScript's text item delimiters
+			repeat with badChar in {tb, lf, cr}
+				set AppleScript's text item delimiters to badChar as text
+				set nmParts to text items of nm
+				set AppleScript's text item delimiters to " "
+				set nm to nmParts as text
+			end repeat
+			set AppleScript's text item delimiters to savedTIDs
 			set cls to "1"
 			if (count of nm) > 0 then
 				set fc to character 1 of nm
@@ -56,20 +66,35 @@ tell application id "com.figure53.QLab.5"
 			"printf %s " & quoted form of buf & ¬
 			" | LC_ALL=en_US.UTF-8 sort -f -t \"$(printf '\\t')\" -k1,1 -k2,2"
 		
+		-- `do shell script` converts shell newlines (\n) to CR (\r) in the
+		-- returned text, so we split on CR here, not LF.
 		set currentTIDs to AppleScript's text item delimiters
-		set AppleScript's text item delimiters to lf
+		set AppleScript's text item delimiters to cr
 		set sortedLines to text items of sortedText
 		set AppleScript's text item delimiters to currentTIDs
 		
+		set sortedIDs to {}
 		repeat with ln in sortedLines
 			set lnText to ln as text
 			if lnText is not "" then
 				set AppleScript's text item delimiters to tb
 				set parts to text items of lnText
 				set AppleScript's text item delimiters to currentTIDs
-				set cid to item 3 of parts
-				move cue id cid of targetGroup to end of targetGroup
+				set end of sortedIDs to (item 3 of parts)
 			end if
 		end repeat
+		
+		tell targetGroup
+			set prevID to missing value
+			repeat with cid in sortedIDs
+				set cidText to cid as text
+				if prevID is missing value then
+					move cue id cidText to beginning
+				else
+					move cue id cidText to after cue id prevID
+				end if
+				set prevID to cidText
+			end repeat
+		end tell
 	end tell
 end tell
